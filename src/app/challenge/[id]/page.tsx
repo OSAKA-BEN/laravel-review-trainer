@@ -4,13 +4,20 @@ import { useState, useCallback, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CodeViewer } from "@/components/CodeViewer";
-import { ResultModal } from "@/components/ResultModal";
+import { ResultPanel } from "@/components/ResultPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import challenges from "@/data/challenges.json";
 import { Challenge, ValidationResult } from "@/types";
-import { ArrowLeft, Check, RotateCcw, Info } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  RotateCcw,
+  Info,
+  ChevronRight,
+  Code2,
+} from "lucide-react";
 
 const levelColors = {
   Easy: "bg-green-500/10 text-green-500 border-green-500/30",
@@ -32,10 +39,11 @@ export default function ChallengePage({
   const { id } = use(params);
   const router = useRouter();
   const [selectedLines, setSelectedLines] = useState<Set<number>>(new Set());
-  const [showResult, setShowResult] = useState(false);
   const [result, setResult] = useState<ValidationResult | null>(null);
 
-  const challenge = (challenges as Challenge[]).find((c) => c.id === parseInt(id));
+  const challenge = (challenges as Challenge[]).find(
+    (c) => c.id === parseInt(id)
+  );
 
   const handleLineClick = useCallback((lineNumber: number) => {
     setSelectedLines((prev) => {
@@ -70,17 +78,17 @@ export default function ChallengePage({
     };
 
     setResult(validationResult);
-    setShowResult(true);
   }, [challenge, selectedLines]);
 
   const handleRetry = useCallback(() => {
     setSelectedLines(new Set());
     setResult(null);
-    setShowResult(false);
   }, []);
 
   const handleNext = useCallback(() => {
-    const currentIndex = (challenges as Challenge[]).findIndex((c) => c.id === parseInt(id));
+    const currentIndex = (challenges as Challenge[]).findIndex(
+      (c) => c.id === parseInt(id)
+    );
     const nextChallenge = (challenges as Challenge[])[currentIndex + 1];
     if (nextChallenge) {
       router.push(`/challenge/${nextChallenge.id}`);
@@ -101,15 +109,18 @@ export default function ChallengePage({
     );
   }
 
-  const currentIndex = (challenges as Challenge[]).findIndex((c) => c.id === parseInt(id));
+  const currentIndex = (challenges as Challenge[]).findIndex(
+    (c) => c.id === parseInt(id)
+  );
   const hasNext = currentIndex < (challenges as Challenge[]).length - 1;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Header */}
-      <header className="border-b sticky top-0 bg-background z-10">
-        <div className="container mx-auto px-6 py-4">
+      <header className="border-b bg-background z-10 flex-shrink-0">
+        <div className="px-6 py-3">
           <div className="flex items-center justify-between">
+            {/* Left side - Navigation and title */}
             <div className="flex items-center gap-4">
               <Link href="/">
                 <Button variant="ghost" size="sm">
@@ -118,114 +129,122 @@ export default function ChallengePage({
                 </Button>
               </Link>
               <div className="h-6 w-px bg-border" />
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-lg font-semibold">{challenge.title}</h1>
-                  <Badge variant="outline" className={levelColors[challenge.level]}>
-                    {levelLabels[challenge.level]}
-                  </Badge>
-                </div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-lg font-semibold">{challenge.title}</h1>
+                <Badge
+                  variant="outline"
+                  className={levelColors[challenge.level]}
+                >
+                  {levelLabels[challenge.level]}
+                </Badge>
               </div>
             </div>
+
+            {/* Center - Progress */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Code2 className="w-4 h-4" />
               <span>
+                Challenge {currentIndex + 1} /{" "}
+                {(challenges as Challenge[]).length}
+              </span>
+            </div>
+
+            {/* Right side - Actions */}
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground">
                 {selectedLines.size} line{selectedLines.size !== 1 ? "s" : ""}{" "}
                 selected
               </span>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main content */}
-      <main className="flex-grow container mx-auto px-6 py-8">
-        <div className="max-w-5xl mx-auto space-y-6">
-          {/* Instructions */}
-          <Card className="p-4 bg-muted/30">
-            <div className="flex gap-3">
-              <Info className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium mb-1">{challenge.description}</p>
-                <p className="text-sm text-muted-foreground">
-                  Click on the lines you think contain errors
-                  (security, logic, syntax). You can deselect by
-                  clicking again.
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          {/* Code Viewer */}
-          <CodeViewer
-            code={challenge.code}
-            selectedLines={selectedLines}
-            onLineClick={handleLineClick}
-            resultMode={
-              result
-                ? {
-                    found: result.found,
-                    missed: result.missed,
-                    falsePositives: result.falsePositives,
-                  }
-                : undefined
-            }
-            disabled={!!result}
-          />
-
-          {/* Stats */}
-          <div className="text-sm text-muted-foreground text-center">
-            {challenge.solution.length} error
-            {challenge.solution.length > 1 ? "s" : ""} to find in this code
-          </div>
-        </div>
-      </main>
-
-      {/* Footer sticky */}
-      <footer className="border-t sticky bottom-0 bg-background">
-        <div className="container mx-auto px-6 py-4">
-          <div className="max-w-5xl mx-auto flex justify-between items-center">
-            <div className="text-sm text-muted-foreground">
-              Challenge {currentIndex + 1} / {(challenges as Challenge[]).length}
-            </div>
-            <div className="flex gap-3">
+              <div className="h-6 w-px bg-border" />
               {result ? (
                 <>
-                  <Button variant="outline" onClick={handleRetry}>
-                    <RotateCcw className="w-4 h-4 mr-2" />
+                  <Button variant="outline" size="sm" onClick={handleRetry}>
+                    <RotateCcw className="w-4 h-4" />
                     Retry
                   </Button>
                   {hasNext && (
-                    <Button onClick={handleNext}>
+                    <Button size="sm" onClick={handleNext}>
                       Next challenge
+                      <ChevronRight className="w-4 h-4 ml-1" />
                     </Button>
                   )}
                 </>
               ) : (
                 <Button
-                  size="lg"
+                  size="sm"
                   onClick={handleValidate}
                   disabled={selectedLines.size === 0}
                 >
-                  <Check className="w-5 h-5 mr-2" />
+                  <Check className="w-4 h-4" />
                   Submit Review
                 </Button>
               )}
             </div>
           </div>
         </div>
-      </footer>
+      </header>
 
-      {/* Result Modal */}
-      {result && (
-        <ResultModal
-          isOpen={showResult}
-          onClose={() => setShowResult(false)}
-          result={result}
-          solutions={challenge.solution}
-          onRetry={handleRetry}
-          onNext={hasNext ? handleNext : undefined}
-        />
-      )}
+      {/* Main content - Two column layout */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left panel - Code and instructions */}
+        <div
+          className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${
+            result ? "border-r" : ""
+          }`}
+        >
+          {/* Instructions */}
+          <div className="p-6 pb-4 flex-shrink-0">
+            <Card className="p-4 bg-muted/30">
+              <div className="flex gap-3">
+                <Info className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-medium mb-1">{challenge.description}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Click on the lines you think contain errors (security,
+                    logic, syntax). You can deselect by clicking again.
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Code Viewer */}
+          <div className="flex-1 px-6 pb-6 overflow-auto">
+            <CodeViewer
+              code={challenge.code}
+              selectedLines={selectedLines}
+              onLineClick={handleLineClick}
+              resultMode={
+                result
+                  ? {
+                      found: result.found,
+                      missed: result.missed,
+                      falsePositives: result.falsePositives,
+                    }
+                  : undefined
+              }
+              disabled={!!result}
+            />
+
+            {/* Stats */}
+            <div className="text-sm text-muted-foreground text-center mt-4">
+              {challenge.solution.length} error
+              {challenge.solution.length > 1 ? "s" : ""} to find in this code
+            </div>
+          </div>
+        </div>
+
+        {/* Right panel - Results drawer */}
+        <div
+          className={`bg-muted/20 overflow-hidden transition-all duration-300 ease-in-out ${
+            result ? "w-[420px]" : "w-0"
+          }`}
+        >
+          {result && (
+            <ResultPanel result={result} solutions={challenge.solution} />
+          )}
+        </div>
+      </div>
     </div>
   );
 }
