@@ -40,47 +40,47 @@ export function ResultModal({
             {isPerfect ? (
               <>
                 <Trophy className="w-8 h-8 text-yellow-500" />
-                Parfait !
+                Perfect!
               </>
             ) : percentage >= 50 ? (
               <>
                 <CheckCircle2 className="w-8 h-8 text-green-500" />
-                Bien joué !
+                Well done!
               </>
             ) : (
               <>
                 <AlertTriangle className="w-8 h-8 text-orange-500" />
-                Continuez à vous entraîner
+                Keep practicing
               </>
             )}
           </DialogTitle>
           <DialogDescription asChild>
             <div className="text-lg mt-2">
-              Score: <span className="font-bold text-foreground">{result.found.length}</span> / {result.total} erreurs trouvées ({percentage}%)
+              Score: <span className="font-bold text-foreground">{result.found.length}</span> / {result.total} errors found ({percentage}%)
             </div>
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 mt-4">
-          {/* Résumé */}
+          {/* Summary */}
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 text-center">
               <div className="text-3xl font-bold text-green-500">{result.found.length}</div>
-              <div className="text-sm text-muted-foreground">Trouvées</div>
+              <div className="text-sm text-muted-foreground">Found</div>
             </div>
             <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 text-center">
               <div className="text-3xl font-bold text-red-500">{result.missed.length}</div>
-              <div className="text-sm text-muted-foreground">Manquées</div>
+              <div className="text-sm text-muted-foreground">Missed</div>
             </div>
             <div className="bg-orange-500/10 border border-orange-500/30 rounded-lg p-4 text-center">
               <div className="text-3xl font-bold text-orange-500">{result.falsePositives.length}</div>
-              <div className="text-sm text-muted-foreground">Faux positifs</div>
+              <div className="text-sm text-muted-foreground">False positives</div>
             </div>
           </div>
 
-          {/* Explications des erreurs */}
+          {/* Error explanations */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-lg">Explications des erreurs</h3>
+            <h3 className="font-semibold text-lg">Error explanations</h3>
             {solutions.map((solution, index) => {
               const wasFound = result.found.includes(solution.line);
               return (
@@ -100,7 +100,7 @@ export function ResultModal({
                         ) : (
                           <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
                         )}
-                        <span className="font-medium">Ligne {solution.line}</span>
+                        <span className="font-medium">Line {solution.line}</span>
                         <Badge variant="outline" className="text-xs">
                           {solution.type}
                         </Badge>
@@ -115,15 +115,15 @@ export function ResultModal({
             })}
           </div>
 
-          {/* Faux positifs */}
+          {/* False positives */}
           {result.falsePositives.length > 0 && (
             <div className="space-y-2">
               <h3 className="font-semibold text-lg flex items-center gap-2">
                 <AlertTriangle className="w-5 h-5 text-orange-500" />
-                Faux positifs
+                False positives
               </h3>
               <p className="text-sm text-muted-foreground">
-                Vous avez marqué les lignes {result.falsePositives.join(", ")} qui ne contenaient pas d&apos;erreur.
+                You marked lines {result.falsePositives.join(", ")} which did not contain any errors.
               </p>
             </div>
           )}
@@ -132,11 +132,11 @@ export function ResultModal({
         {/* Actions */}
         <div className="flex gap-3 mt-6">
           <Button variant="outline" onClick={onRetry} className="flex-1">
-            Réessayer
+            Retry
           </Button>
           {onNext && (
             <Button onClick={onNext} className="flex-1">
-              Challenge suivant
+              Next challenge
             </Button>
           )}
         </div>

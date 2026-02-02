@@ -19,9 +19,9 @@ const levelColors = {
 };
 
 const levelLabels = {
-  Easy: "Facile",
-  Medium: "Moyen",
-  Hard: "Difficile",
+  Easy: "Easy",
+  Medium: "Medium",
+  Hard: "Hard",
 };
 
 export default function ChallengePage({
@@ -92,9 +92,9 @@ export default function ChallengePage({
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="p-8 text-center">
-          <h2 className="text-xl font-semibold mb-4">Challenge non trouvé</h2>
+          <h2 className="text-xl font-semibold mb-4">Challenge not found</h2>
           <Link href="/">
-            <Button>Retour à l&apos;accueil</Button>
+            <Button>Back to home</Button>
           </Link>
         </Card>
       </div>
@@ -114,7 +114,7 @@ export default function ChallengePage({
               <Link href="/">
                 <Button variant="ghost" size="sm">
                   <ArrowLeft className="w-4 h-4 mr-2" />
-                  Retour
+                  Back
                 </Button>
               </Link>
               <div className="h-6 w-px bg-border" />
@@ -129,8 +129,8 @@ export default function ChallengePage({
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>
-                {selectedLines.size} ligne{selectedLines.size !== 1 ? "s" : ""}{" "}
-                sélectionnée{selectedLines.size !== 1 ? "s" : ""}
+                {selectedLines.size} line{selectedLines.size !== 1 ? "s" : ""}{" "}
+                selected
               </span>
             </div>
           </div>
@@ -147,9 +147,9 @@ export default function ChallengePage({
               <div>
                 <p className="font-medium mb-1">{challenge.description}</p>
                 <p className="text-sm text-muted-foreground">
-                  Cliquez sur les lignes que vous pensez contenir des erreurs
-                  (sécurité, logique, syntaxe). Vous pouvez désélectionner en
-                  cliquant à nouveau.
+                  Click on the lines you think contain errors
+                  (security, logic, syntax). You can deselect by
+                  clicking again.
                 </p>
               </div>
             </div>
@@ -174,8 +174,8 @@ export default function ChallengePage({
 
           {/* Stats */}
           <div className="text-sm text-muted-foreground text-center">
-            {challenge.solution.length} erreur
-            {challenge.solution.length > 1 ? "s" : ""} à trouver dans ce code
+            {challenge.solution.length} error
+            {challenge.solution.length > 1 ? "s" : ""} to find in this code
           </div>
         </div>
       </main>
@@ -192,11 +192,11 @@ export default function ChallengePage({
                 <>
                   <Button variant="outline" onClick={handleRetry}>
                     <RotateCcw className="w-4 h-4 mr-2" />
-                    Réessayer
+                    Retry
                   </Button>
                   {hasNext && (
                     <Button onClick={handleNext}>
-                      Challenge suivant
+                      Next challenge
                     </Button>
                   )}
                 </>
@@ -207,7 +207,7 @@ export default function ChallengePage({
                   disabled={selectedLines.size === 0}
                 >
                   <Check className="w-5 h-5 mr-2" />
-                  Valider la Review
+                  Submit Review
                 </Button>
               )}
             </div>

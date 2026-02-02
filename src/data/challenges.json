@@ -2,144 +2,144 @@
   {
     "id": 1,
     "title": "User Registration Controller",
-    "description": "Ce contrôleur gère l'inscription des utilisateurs. Cherchez les failles de sécurité et les erreurs de logique.",
+    "description": "This controller handles user registration. Look for security vulnerabilities and logic errors.",
     "level": "Easy",
     "code": "<?php\n\nnamespace App\\Http\\Controllers;\n\nuse App\\Models\\User;\nuse Illuminate\\Http\\Request;\nuse Illuminate\\Support\\Facades\\Hash;\n\nclass RegisterController extends Controller\n{\n    public function store(Request $request)\n    {\n        $user = User::create($request->all());\n\n        $user->password = $request->password;\n        $user->save();\n\n        return redirect('/dashboard');\n    }\n}",
     "solution": [
       {
         "line": 13,
         "type": "Security",
-        "explanation": "Mass Assignment vulnerability: $request->all() ne devrait pas être passé directement à create(). Utilisez $request->validated() après validation ou spécifiez explicitement les champs autorisés."
+        "explanation": "Mass Assignment vulnerability: $request->all() should not be passed directly to create(). Use $request->validated() after validation or explicitly specify allowed fields."
       },
       {
         "line": 15,
         "type": "Security",
-        "explanation": "Le mot de passe n'est pas hashé avant d'être sauvegardé. Utilisez Hash::make($request->password) pour sécuriser le mot de passe."
+        "explanation": "Password is not hashed before being saved. Use Hash::make($request->password) to secure the password."
       }
     ]
   },
   {
     "id": 2,
     "title": "Product Search Query",
-    "description": "Cette méthode effectue une recherche de produits. Identifiez les vulnérabilités et problèmes de performance.",
+    "description": "This method performs a product search. Identify vulnerabilities and performance issues.",
     "level": "Medium",
     "code": "<?php\n\nnamespace App\\Http\\Controllers;\n\nuse App\\Models\\Product;\nuse Illuminate\\Http\\Request;\nuse Illuminate\\Support\\Facades\\DB;\n\nclass ProductController extends Controller\n{\n    public function search(Request $request)\n    {\n        $search = $request->input('q');\n\n        $products = DB::select(\n            \"SELECT * FROM products WHERE name LIKE '%$search%'\"\n        );\n\n        foreach ($products as $product) {\n            $product->category = DB::table('categories')\n                ->where('id', $product->category_id)\n                ->first();\n        }\n\n        return view('products.index', compact('products'));\n    }\n}",
     "solution": [
       {
         "line": 15,
         "type": "Security",
-        "explanation": "Injection SQL: La variable $search est insérée directement dans la requête sans échappement. Utilisez des requêtes paramétrées: DB::select('SELECT * FROM products WHERE name LIKE ?', ['%'.$search.'%'])"
+        "explanation": "SQL Injection: The $search variable is inserted directly into the query without escaping. Use parameterized queries: DB::select('SELECT * FROM products WHERE name LIKE ?', ['%'.$search.'%'])"
       },
       {
         "line": 16,
         "type": "Security",
-        "explanation": "Suite de l'injection SQL - la requête brute avec concaténation de variable est dangereuse."
+        "explanation": "Continuation of SQL injection - raw query with variable concatenation is dangerous."
       },
       {
         "line": 19,
         "type": "Performance",
-        "explanation": "Problème N+1: Une requête est exécutée pour chaque produit. Utilisez le eager loading avec Eloquent: Product::with('category')->where('name', 'like', '%'.$search.'%')->get()"
+        "explanation": "N+1 problem: A query is executed for each product. Use eager loading with Eloquent: Product::with('category')->where('name', 'like', '%'.$search.'%')->get()"
       }
     ]
   },
   {
     "id": 3,
     "title": "Authentication Middleware",
-    "description": "Ce middleware vérifie l'authentification de l'utilisateur. Trouvez les failles de sécurité.",
+    "description": "This middleware checks user authentication. Find the security flaws.",
     "level": "Easy",
     "code": "<?php\n\nnamespace App\\Http\\Middleware;\n\nuse Closure;\nuse Illuminate\\Http\\Request;\n\nclass CheckAdmin\n{\n    public function handle(Request $request, Closure $next)\n    {\n        if ($request->user()->role == 'admin') {\n            return $next($request);\n        }\n\n        return redirect('/home');\n    }\n}",
     "solution": [
       {
         "line": 12,
         "type": "Security",
-        "explanation": "Pas de vérification si l'utilisateur est connecté. Si $request->user() retourne null, cela provoquera une erreur. Vérifiez d'abord: if ($request->user() && $request->user()->role === 'admin')"
+        "explanation": "No check if user is logged in. If $request->user() returns null, this will cause an error. Check first: if ($request->user() && $request->user()->role === 'admin')"
       },
       {
         "line": 12,
         "type": "Best Practice",
-        "explanation": "Utilisez la comparaison stricte === au lieu de == pour éviter les problèmes de type juggling."
+        "explanation": "Use strict comparison === instead of == to avoid type juggling issues."
       }
     ]
   },
   {
     "id": 4,
     "title": "File Upload Handler",
-    "description": "Ce contrôleur gère l'upload de fichiers. Attention aux failles de sécurité critiques.",
+    "description": "This controller handles file uploads. Watch out for critical security flaws.",
     "level": "Hard",
     "code": "<?php\n\nnamespace App\\Http\\Controllers;\n\nuse Illuminate\\Http\\Request;\n\nclass FileController extends Controller\n{\n    public function upload(Request $request)\n    {\n        $file = $request->file('document');\n        \n        $filename = $file->getClientOriginalName();\n        \n        $file->move(public_path('uploads'), $filename);\n\n        return response()->json([\n            'path' => '/uploads/' . $filename\n        ]);\n    }\n}",
     "solution": [
       {
         "line": 11,
         "type": "Security",
-        "explanation": "Aucune validation du fichier uploadé. Validez le type MIME, l'extension et la taille: $request->validate(['document' => 'required|file|mimes:pdf,doc,docx|max:10240'])"
+        "explanation": "No validation of uploaded file. Validate MIME type, extension, and size: $request->validate(['document' => 'required|file|mimes:pdf,doc,docx|max:10240'])"
       },
       {
         "line": 13,
         "type": "Security",
-        "explanation": "Utiliser getClientOriginalName() est dangereux car le nom peut contenir des caractères malveillants ou permettre l'écrasement de fichiers. Générez un nom unique avec Str::uuid() ou hashName()."
+        "explanation": "Using getClientOriginalName() is dangerous as the name can contain malicious characters or allow file overwriting. Generate a unique name with Str::uuid() or hashName()."
       },
       {
         "line": 15,
         "type": "Security",
-        "explanation": "Stocker les fichiers dans public_path() les rend directement accessibles. Si un attaquant upload un fichier PHP, il pourra l'exécuter. Utilisez storage_path() et servez les fichiers via un contrôleur."
+        "explanation": "Storing files in public_path() makes them directly accessible. If an attacker uploads a PHP file, they can execute it. Use storage_path() and serve files through a controller."
       }
     ]
   },
   {
     "id": 5,
     "title": "API Token Validation",
-    "description": "Ce contrôleur valide les tokens API. Cherchez les problèmes de sécurité.",
+    "description": "This controller validates API tokens. Look for security issues.",
     "level": "Medium",
     "code": "<?php\n\nnamespace App\\Http\\Controllers\\Api;\n\nuse App\\Models\\ApiToken;\nuse Illuminate\\Http\\Request;\n\nclass TokenController extends Controller\n{\n    public function validate(Request $request)\n    {\n        $token = $request->header('X-API-Token');\n\n        $apiToken = ApiToken::where('token', $token)->first();\n\n        if ($apiToken) {\n            return response()->json(['valid' => true]);\n        }\n\n        return response()->json(['valid' => false]);\n    }\n\n    public function debug(Request $request)\n    {\n        return response()->json([\n            'env' => config('app.env'),\n            'debug' => config('app.debug'),\n            'db' => config('database.connections.mysql')\n        ]);\n    }\n}",
     "solution": [
       {
         "line": 14,
         "type": "Security",
-        "explanation": "Comparaison de token vulnérable au timing attack. Utilisez hash_equals() pour comparer les tokens de manière sécurisée, ou mieux, stockez les tokens hashés."
+        "explanation": "Token comparison vulnerable to timing attack. Use hash_equals() to compare tokens securely, or better yet, store tokens hashed."
       },
       {
         "line": 25,
         "type": "Security",
-        "explanation": "Exposition de la configuration de l'environnement. Ne jamais exposer config('app.env') ou config('app.debug') dans une API."
+        "explanation": "Exposure of environment configuration. Never expose config('app.env') or config('app.debug') in an API."
       },
       {
         "line": 26,
         "type": "Security",
-        "explanation": "Exposition critique des identifiants de base de données. Cette endpoint ne devrait jamais exister en production."
+        "explanation": "Critical exposure of database credentials. This endpoint should never exist in production."
       }
     ]
   },
   {
     "id": 6,
     "title": "Password Reset Flow",
-    "description": "Ce contrôleur gère la réinitialisation de mot de passe. Identifiez les failles.",
+    "description": "This controller handles password reset. Identify the flaws.",
     "level": "Hard",
     "code": "<?php\n\nnamespace App\\Http\\Controllers;\n\nuse App\\Models\\User;\nuse Illuminate\\Http\\Request;\nuse Illuminate\\Support\\Str;\nuse Illuminate\\Support\\Facades\\Mail;\n\nclass PasswordResetController extends Controller\n{\n    public function sendResetLink(Request $request)\n    {\n        $user = User::where('email', $request->email)->first();\n\n        if (!$user) {\n            return back()->with('error', 'Aucun compte avec cet email.');\n        }\n\n        $token = Str::random(20);\n        $user->reset_token = $token;\n        $user->save();\n\n        Mail::raw(\n            \"Cliquez ici: http://myapp.com/reset?token=$token&email={$user->email}\",\n            fn($m) => $m->to($user->email)->subject('Reset Password')\n        );\n\n        return back()->with('success', 'Email envoyé!');\n    }\n\n    public function reset(Request $request)\n    {\n        $user = User::where('email', $request->email)\n            ->where('reset_token', $request->token)\n            ->first();\n\n        if ($user) {\n            $user->password = $request->password;\n            $user->reset_token = null;\n            $user->save();\n        }\n\n        return redirect('/login');\n    }\n}",
     "solution": [
       {
         "line": 17,
         "type": "Security",
-        "explanation": "User enumeration: Le message révèle si un email existe ou non dans la base. Utilisez un message générique comme 'Si cet email existe, un lien vous a été envoyé.'"
+        "explanation": "User enumeration: The message reveals whether an email exists in the database. Use a generic message like 'If this email exists, a link has been sent to you.'"
       },
       {
         "line": 20,
         "type": "Security",
-        "explanation": "Token trop court et prévisible. Utilisez un token plus long (60+ caractères) et hashé: hash('sha256', Str::random(60))"
+        "explanation": "Token too short and predictable. Use a longer token (60+ characters) and hash it: hash('sha256', Str::random(60))"
       },
       {
         "line": 21,
         "type": "Security",
-        "explanation": "Le token n'a pas de date d'expiration. Ajoutez un champ reset_token_expires_at et vérifiez-le lors de la réinitialisation."
+        "explanation": "Token has no expiration date. Add a reset_token_expires_at field and check it during reset."
       },
       {
         "line": 38,
         "type": "Security",
-        "explanation": "Le mot de passe n'est pas hashé avant sauvegarde. Utilisez Hash::make($request->password)."
+        "explanation": "Password is not hashed before saving. Use Hash::make($request->password)."
       },
       {
         "line": 38,
         "type": "Security",
-        "explanation": "Aucune validation du nouveau mot de passe (longueur minimale, complexité). Ajoutez une validation appropriée."
+        "explanation": "No validation of the new password (minimum length, complexity). Add appropriate validation."
       }
     ]
   }

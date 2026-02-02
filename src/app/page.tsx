@@ -17,7 +17,7 @@ export default function Home() {
               <div>
                 <h1 className="text-xl font-bold">Laravel Review Trainer</h1>
                 <p className="text-sm text-muted-foreground">
-                  Entraînez votre oeil à la revue de code
+                  Train your eye for code review
                 </p>
               </div>
             </div>
@@ -30,12 +30,12 @@ export default function Home() {
         <div className="container mx-auto px-6 py-12">
           <div className="max-w-2xl">
             <h2 className="text-3xl font-bold tracking-tight mb-4">
-              Devenez expert en Code Review Laravel
+              Become a Laravel Code Review Expert
             </h2>
             <p className="text-lg text-muted-foreground mb-6">
-              Analysez des snippets de code Laravel et identifiez les failles de
-              sécurité, les erreurs de logique et les mauvaises pratiques.
-              Chaque challenge vous aide à développer un oeil de senior.
+              Analyze Laravel code snippets and identify security vulnerabilities,
+              logic errors, and bad practices.
+              Each challenge helps you develop a senior developer&apos;s eye.
             </p>
             <div className="flex gap-6">
               <div className="flex items-center gap-2 text-sm">
@@ -45,8 +45,8 @@ export default function Home() {
               <div className="flex items-center gap-2 text-sm">
                 <Trophy className="w-5 h-5 text-yellow-500" />
                 <span>
-                  {(challenges as Challenge[]).reduce((acc, c) => acc + c.solution.length, 0)} Erreurs
-                  à trouver
+                  {(challenges as Challenge[]).reduce((acc, c) => acc + c.solution.length, 0)} Errors
+                  to find
                 </span>
               </div>
             </div>
@@ -57,9 +57,9 @@ export default function Home() {
       {/* Challenges */}
       <main className="container mx-auto px-6 py-12">
         <div className="mb-8">
-          <h3 className="text-2xl font-semibold mb-2">Challenges disponibles</h3>
+          <h3 className="text-2xl font-semibold mb-2">Available Challenges</h3>
           <p className="text-muted-foreground">
-            Sélectionnez un challenge pour commencer votre session de review
+            Select a challenge to start your review session
           </p>
         </div>
         <ChallengeList challenges={challenges as Challenge[]} />
@@ -68,7 +68,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t py-6 mt-auto">
         <div className="container mx-auto px-6 text-center text-sm text-muted-foreground">
-          Laravel Review Trainer - Entraînez-vous à repérer les erreurs dans le code Laravel
+          Laravel Review Trainer - Practice spotting errors in Laravel code
         </div>
       </footer>
     </div>

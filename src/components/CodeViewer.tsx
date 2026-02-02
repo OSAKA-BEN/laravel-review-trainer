@@ -81,12 +81,12 @@ export function CodeViewer({
                   !lineClass && "bg-transparent"
                 )}
               >
-                {/* Numéro de ligne */}
+                {/* Line number */}
                 <div className="flex-shrink-0 w-12 px-3 py-0.5 text-right text-zinc-500 select-none border-r border-zinc-700 bg-zinc-800/50">
                   {lineNumber}
                 </div>
 
-                {/* Contenu de la ligne */}
+                {/* Line content */}
                 <div className="flex-grow px-4 py-0.5 overflow-x-auto">
                   <SyntaxHighlighter
                     language="php"
@@ -113,20 +113,20 @@ export function CodeViewer({
         </div>
       </div>
 
-      {/* Légende en mode résultat */}
+      {/* Legend in result mode */}
       {resultMode && (
         <div className="flex gap-6 px-4 py-3 bg-zinc-800 border-t border-zinc-700 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-green-500/30 border-l-4 border-green-500" />
-            <span className="text-zinc-300">Trouvé</span>
+            <span className="text-zinc-300">Found</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-red-500/30 border-l-4 border-red-500" />
-            <span className="text-zinc-300">Manqué</span>
+            <span className="text-zinc-300">Missed</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 bg-orange-500/30 border-l-4 border-orange-500" />
-            <span className="text-zinc-300">Faux positif</span>
+            <span className="text-zinc-300">False positive</span>
           </div>
         </div>
       )}

@@ -14,9 +14,9 @@ export interface Challenge {
 }
 
 export interface ValidationResult {
-  found: number[];      // Lignes correctement identifiées
-  missed: number[];     // Lignes d'erreur non trouvées
-  falsePositives: number[]; // Lignes saines marquées à tort
+  found: number[];      // Correctly identified lines
+  missed: number[];     // Error lines not found
+  falsePositives: number[]; // Clean lines incorrectly marked
   score: number;
   total: number;
 }

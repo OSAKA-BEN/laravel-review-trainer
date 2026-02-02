@@ -17,9 +17,9 @@ const levelColors = {
 };
 
 const levelLabels = {
-  Easy: "Facile",
-  Medium: "Moyen",
-  Hard: "Difficile",
+  Easy: "Easy",
+  Medium: "Medium",
+  Hard: "Hard",
 };
 
 function getErrorTypeIcon(types: string[]) {
@@ -55,7 +55,7 @@ export function ChallengeList({ challenges }: ChallengeListProps) {
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     {getErrorTypeIcon(errorTypes)}
-                    <span>{challenge.solution.length} erreur{challenge.solution.length > 1 ? "s" : ""} à trouver</span>
+                    <span>{challenge.solution.length} error{challenge.solution.length > 1 ? "s" : ""} to find</span>
                   </div>
                   <div className="flex gap-1">
                     {errorTypes.map((type) => (

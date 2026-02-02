@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Laravel Review Trainer",
-  description: "Entraînez-vous à la revue de code Laravel en identifiant les failles de sécurité et erreurs de logique",
+  description: "Practice Laravel code review by identifying security vulnerabilities and logic errors",
 };
 
 export default function RootLayout({
@@ -23,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className="dark">
+    <html lang="en" className="dark">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
