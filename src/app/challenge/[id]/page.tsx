@@ -16,8 +16,9 @@ import {
   RotateCcw,
   Info,
   ChevronRight,
-  Code2,
+  List,
 } from "lucide-react";
+import { ChallengeDrawer } from "@/components/ChallengeDrawer";
 
 const levelColors = {
   Easy: "bg-green-500/10 text-green-500 border-green-500/30",
@@ -40,6 +41,7 @@ export default function ChallengePage({
   const router = useRouter();
   const [selectedLines, setSelectedLines] = useState<Set<number>>(new Set());
   const [result, setResult] = useState<ValidationResult | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const challenge = (challenges as Challenge[]).find(
     (c) => c.id === parseInt(id)
@@ -116,12 +118,26 @@ export default function ChallengePage({
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
+      <ChallengeDrawer
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        currentChallengeId={parseInt(id)}
+      />
+
       {/* Header */}
       <header className="border-b bg-background z-10 flex-shrink-0">
         <div className="px-6 py-3">
           <div className="flex items-center justify-between">
             {/* Left side - Navigation and title */}
             <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => setDrawerOpen(true)}
+              >
+                <List className="w-4 h-4" />
+              </Button>
+              <div className="h-6 w-px bg-border" />
               <Link href="/">
                 <Button variant="ghost" size="sm">
                   <ArrowLeft className="w-4 h-4 mr-2" />
@@ -138,15 +154,6 @@ export default function ChallengePage({
                   {levelLabels[challenge.level]}
                 </Badge>
               </div>
-            </div>
-
-            {/* Center - Progress */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Code2 className="w-4 h-4" />
-              <span>
-                Challenge {currentIndex + 1} /{" "}
-                {(challenges as Challenge[]).length}
-              </span>
             </div>
 
             {/* Right side - Actions */}

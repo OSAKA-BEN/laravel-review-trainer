@@ -1,7 +1,7 @@
 import { ChallengeList } from "@/components/ChallengeList";
 import challenges from "@/data/challenges.json";
 import { Challenge } from "@/types";
-import { Code2, Target, Trophy } from "lucide-react";
+import { Target, Trophy } from "lucide-react";
 
 export default function Home() {
   return (
@@ -11,9 +11,6 @@ export default function Home() {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Code2 className="w-6 h-6 text-primary" />
-              </div>
               <div>
                 <h1 className="text-xl font-bold">Laravel Review Trainer</h1>
                 <p className="text-sm text-muted-foreground">
