@@ -4,7 +4,6 @@ import { useState, useCallback, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CodeViewer } from "@/components/CodeViewer";
-import { ResultPanel } from "@/components/ResultPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
@@ -23,6 +22,9 @@ import {
   Info,
   ChevronRight,
   List,
+  Trophy,
+  CheckCircle2,
+  AlertTriangle,
 } from "lucide-react";
 import { ChallengeDrawer } from "@/components/ChallengeDrawer";
 
@@ -127,6 +129,13 @@ export default function ChallengePage({
   );
   const hasNext = currentIndex < (challenges as Challenge[]).length - 1;
 
+  const percentage = result
+    ? Math.round((result.found.length / result.total) * 100)
+    : 0;
+  const isPerfect = result
+    ? result.found.length === result.total && result.falsePositives.length === 0
+    : false;
+
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
       <ChallengeDrawer
@@ -207,16 +216,68 @@ export default function ChallengePage({
         </div>
       </header>
 
-      {/* Main content - Two column layout */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left panel - Code and instructions */}
-        <div
-          className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${
-            result ? "border-r" : ""
-          }`}
-        >
-          {/* Instructions */}
-          <div className="p-6 pb-4 flex-shrink-0">
+      {/* Main content — full width */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Instructions / Score banner */}
+        <div className="p-6 pb-4 flex-shrink-0">
+          {result ? (
+            /* Score summary banner */
+            <Card className="p-4 bg-muted/30">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  {isPerfect ? (
+                    <Trophy className="w-6 h-6 text-yellow-500" />
+                  ) : percentage >= 50 ? (
+                    <CheckCircle2 className="w-6 h-6 text-green-500" />
+                  ) : (
+                    <AlertTriangle className="w-6 h-6 text-orange-500" />
+                  )}
+                  <div>
+                    <p className="font-semibold">
+                      {isPerfect
+                        ? "Perfect!"
+                        : percentage >= 50
+                          ? "Well done!"
+                          : "Keep practicing"}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Score:{" "}
+                      <span className="font-bold text-foreground">
+                        {result.found.length}
+                      </span>{" "}
+                      / {result.total} errors found ({percentage}%)
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-full bg-green-500" />
+                    <span className="text-sm font-medium">
+                      {result.found.length} found
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-3 h-3 rounded-full bg-red-500" />
+                    <span className="text-sm font-medium">
+                      {result.missed.length} missed
+                    </span>
+                  </div>
+                  {result.falsePositives.length > 0 && (
+                    <div className="flex items-center gap-1.5">
+                      <div className="w-3 h-3 rounded-full bg-orange-500" />
+                      <span className="text-sm font-medium">
+                        {result.falsePositives.length} false{" "}
+                        {result.falsePositives.length === 1
+                          ? "positive"
+                          : "positives"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Card>
+          ) : (
+            /* Instructions */
             <Card className="p-4 bg-muted/30">
               <div className="flex gap-3">
                 <Info className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
@@ -231,27 +292,30 @@ export default function ChallengePage({
                 </div>
               </div>
             </Card>
-          </div>
+          )}
+        </div>
 
-          {/* Code Viewer */}
-          <div className="flex-1 px-6 pb-6 overflow-auto">
-            <CodeViewer
-              files={files}
-              selectedLines={selectedLines}
-              onLineClick={handleLineClick}
-              resultMode={
-                result
-                  ? {
-                      found: result.found,
-                      missed: result.missed,
-                      falsePositives: result.falsePositives,
-                    }
-                  : undefined
-              }
-              disabled={!!result}
-            />
+        {/* Code Viewer */}
+        <div className="flex-1 px-6 pb-6 overflow-auto">
+          <CodeViewer
+            files={files}
+            selectedLines={selectedLines}
+            onLineClick={handleLineClick}
+            resultMode={
+              result
+                ? {
+                    found: result.found,
+                    missed: result.missed,
+                    falsePositives: result.falsePositives,
+                  }
+                : undefined
+            }
+            solutions={challenge.solution}
+            disabled={!!result}
+          />
 
-            {/* Stats */}
+          {/* Stats */}
+          {!result && (
             <div className="text-sm text-muted-foreground text-center mt-4">
               {challenge.solution.length} error
               {challenge.solution.length > 1 ? "s" : ""} to find
@@ -259,21 +323,6 @@ export default function ChallengePage({
                 ? ` across ${files.length} files`
                 : " in this code"}
             </div>
-          </div>
-        </div>
-
-        {/* Right panel - Results drawer */}
-        <div
-          className={`bg-muted/20 overflow-hidden transition-all duration-300 ease-in-out ${
-            result ? "w-[420px]" : "w-0"
-          }`}
-        >
-          {result && (
-            <ResultPanel
-              result={result}
-              solutions={challenge.solution}
-              isMultiFile={isMultiFile}
-            />
           )}
         </div>
       </div>
