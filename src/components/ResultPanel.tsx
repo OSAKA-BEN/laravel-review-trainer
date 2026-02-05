@@ -2,17 +2,30 @@
 
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle, AlertTriangle, Trophy } from "lucide-react";
-import { Solution, ValidationResult } from "@/types";
+import { Solution, ValidationResult, parseLineKey } from "@/types";
 
 interface ResultPanelProps {
   result: ValidationResult;
   solutions: Solution[];
+  isMultiFile?: boolean;
 }
 
-export function ResultPanel({ result, solutions }: ResultPanelProps) {
+export function ResultPanel({
+  result,
+  solutions,
+  isMultiFile = false,
+}: ResultPanelProps) {
   const percentage = Math.round((result.found.length / result.total) * 100);
   const isPerfect =
     result.found.length === result.total && result.falsePositives.length === 0;
+
+  const formatLineKey = (key: string) => {
+    const parsed = parseLineKey(key);
+    if (parsed.file) {
+      return `${parsed.file}:${parsed.line}`;
+    }
+    return `Line ${parsed.line}`;
+  };
 
   return (
     <div className="h-full flex flex-col">
@@ -71,7 +84,13 @@ export function ResultPanel({ result, solutions }: ResultPanelProps) {
         <div className="space-y-4">
           <h3 className="font-semibold text-lg">Error explanations</h3>
           {solutions.map((solution, index) => {
-            const wasFound = result.found.includes(solution.line);
+            const wasFound = result.found.some((key) => {
+              const parsed = parseLineKey(key);
+              return (
+                parsed.line === solution.line &&
+                (!isMultiFile || parsed.file === solution.file)
+              );
+            });
             return (
               <div
                 key={index}
@@ -89,6 +108,11 @@ export function ResultPanel({ result, solutions }: ResultPanelProps) {
                   )}
                   <div className="flex-grow min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      {isMultiFile && solution.file && (
+                        <span className="font-mono text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                          {solution.file}
+                        </span>
+                      )}
                       <span className="font-medium">Line {solution.line}</span>
                       <Badge variant="outline" className="text-xs">
                         {solution.type}
@@ -112,8 +136,9 @@ export function ResultPanel({ result, solutions }: ResultPanelProps) {
               False positives
             </h3>
             <p className="text-sm text-muted-foreground">
-              You marked lines {result.falsePositives.join(", ")} which did not
-              contain any errors.
+              You marked{" "}
+              {result.falsePositives.map(formatLineKey).join(", ")}{" "}
+              which did not contain any errors.
             </p>
           </div>
         )}

@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle, AlertTriangle, Trophy } from "lucide-react";
-import { Solution, ValidationResult } from "@/types";
+import { Solution, ValidationResult, makeLineKey } from "@/types";
 
 interface ResultModalProps {
   isOpen: boolean;
@@ -82,7 +82,7 @@ export function ResultModal({
           <div className="space-y-4">
             <h3 className="font-semibold text-lg">Error explanations</h3>
             {solutions.map((solution, index) => {
-              const wasFound = result.found.includes(solution.line);
+              const wasFound = result.found.includes(makeLineKey(solution.line, solution.file));
               return (
                 <div
                   key={index}

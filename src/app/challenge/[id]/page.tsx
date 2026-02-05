@@ -9,7 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import challenges from "@/data/challenges.json";
-import { Challenge, ValidationResult } from "@/types";
+import {
+  Challenge,
+  ValidationResult,
+  LineKey,
+  makeLineKey,
+  getChallengeFiles,
+} from "@/types";
 import {
   ArrowLeft,
   Check,
@@ -39,7 +45,7 @@ export default function ChallengePage({
 }) {
   const { id } = use(params);
   const router = useRouter();
-  const [selectedLines, setSelectedLines] = useState<Set<number>>(new Set());
+  const [selectedLines, setSelectedLines] = useState<Set<LineKey>>(new Set());
   const [result, setResult] = useState<ValidationResult | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -47,13 +53,16 @@ export default function ChallengePage({
     (c) => c.id === parseInt(id)
   );
 
-  const handleLineClick = useCallback((lineNumber: number) => {
+  const files = challenge ? getChallengeFiles(challenge) : [];
+  const isMultiFile = files.length > 1;
+
+  const handleLineClick = useCallback((key: LineKey) => {
     setSelectedLines((prev) => {
       const newSet = new Set(prev);
-      if (newSet.has(lineNumber)) {
-        newSet.delete(lineNumber);
+      if (newSet.has(key)) {
+        newSet.delete(key);
       } else {
-        newSet.add(lineNumber);
+        newSet.add(key);
       }
       return newSet;
     });
@@ -62,13 +71,15 @@ export default function ChallengePage({
   const handleValidate = useCallback(() => {
     if (!challenge) return;
 
-    const solutionLines = challenge.solution.map((s) => s.line);
+    const solutionKeys = challenge.solution.map((s) =>
+      isMultiFile ? makeLineKey(s.line, s.file) : makeLineKey(s.line)
+    );
     const selectedArray = Array.from(selectedLines);
 
-    const found = selectedArray.filter((line) => solutionLines.includes(line));
-    const missed = solutionLines.filter((line) => !selectedLines.has(line));
+    const found = selectedArray.filter((key) => solutionKeys.includes(key));
+    const missed = solutionKeys.filter((key) => !selectedLines.has(key));
     const falsePositives = selectedArray.filter(
-      (line) => !solutionLines.includes(line)
+      (key) => !solutionKeys.includes(key)
     );
 
     const validationResult: ValidationResult = {
@@ -76,11 +87,11 @@ export default function ChallengePage({
       missed,
       falsePositives,
       score: found.length,
-      total: solutionLines.length,
+      total: solutionKeys.length,
     };
 
     setResult(validationResult);
-  }, [challenge, selectedLines]);
+  }, [challenge, selectedLines, isMultiFile]);
 
   const handleRetry = useCallback(() => {
     setSelectedLines(new Set());
@@ -153,6 +164,11 @@ export default function ChallengePage({
                 >
                   {levelLabels[challenge.level]}
                 </Badge>
+                {isMultiFile && (
+                  <Badge variant="secondary" className="text-xs">
+                    {files.length} files
+                  </Badge>
+                )}
               </div>
             </div>
 
@@ -209,6 +225,8 @@ export default function ChallengePage({
                   <p className="text-sm text-muted-foreground">
                     Click on the lines you think contain errors (security,
                     logic, syntax). You can deselect by clicking again.
+                    {isMultiFile &&
+                      " Navigate between files using the tabs above the code."}
                   </p>
                 </div>
               </div>
@@ -218,7 +236,7 @@ export default function ChallengePage({
           {/* Code Viewer */}
           <div className="flex-1 px-6 pb-6 overflow-auto">
             <CodeViewer
-              code={challenge.code}
+              files={files}
               selectedLines={selectedLines}
               onLineClick={handleLineClick}
               resultMode={
@@ -236,7 +254,10 @@ export default function ChallengePage({
             {/* Stats */}
             <div className="text-sm text-muted-foreground text-center mt-4">
               {challenge.solution.length} error
-              {challenge.solution.length > 1 ? "s" : ""} to find in this code
+              {challenge.solution.length > 1 ? "s" : ""} to find
+              {isMultiFile
+                ? ` across ${files.length} files`
+                : " in this code"}
             </div>
           </div>
         </div>
@@ -248,7 +269,11 @@ export default function ChallengePage({
           }`}
         >
           {result && (
-            <ResultPanel result={result} solutions={challenge.solution} />
+            <ResultPanel
+              result={result}
+              solutions={challenge.solution}
+              isMultiFile={isMultiFile}
+            />
           )}
         </div>
       </div>

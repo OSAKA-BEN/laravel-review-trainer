@@ -52,12 +52,12 @@ export function ChallengeList({ challenges }: ChallengeListProps) {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                <div className="flex flex-col gap-3 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     {getErrorTypeIcon(errorTypes)}
                     <span>{challenge.solution.length} error{challenge.solution.length > 1 ? "s" : ""} to find</span>
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex flex-wrap gap-1">
                     {errorTypes.map((type) => (
                       <Badge key={type} variant="secondary" className="text-xs">
                         {type}
