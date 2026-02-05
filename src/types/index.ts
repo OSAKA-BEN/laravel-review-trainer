@@ -55,3 +55,38 @@ export function getChallengeFiles(challenge: Challenge): ChallengeFile[] {
   }
   return [];
 }
+
+// --- Explanation / Debugger Stepper types ---
+
+export type StepType = "info" | "warning" | "danger" | "tip";
+export type ExplanationLevel = "Beginner" | "Intermediate" | "Advanced";
+
+export interface ExplanationStep {
+  id: number;
+  file?: string;
+  lines: number[];
+  title: string;
+  explanation: string;
+  type: StepType;
+}
+
+export interface Explanation {
+  id: number;
+  title: string;
+  description: string;
+  level: ExplanationLevel;
+  category: string;
+  code?: string;
+  files?: ChallengeFile[];
+  steps: ExplanationStep[];
+}
+
+export function getExplanationFiles(explanation: Explanation): ChallengeFile[] {
+  if (explanation.files && explanation.files.length > 0) {
+    return explanation.files;
+  }
+  if (explanation.code) {
+    return [{ name: "code.php", code: explanation.code }];
+  }
+  return [];
+}

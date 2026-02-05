@@ -1,7 +1,9 @@
 import { ChallengeList } from "@/components/ChallengeList";
+import { ExplanationList } from "@/components/ExplanationList";
 import challenges from "@/data/challenges.json";
-import { Challenge } from "@/types";
-import { Target, Trophy } from "lucide-react";
+import explanations from "@/data/explanations.json";
+import { Challenge, Explanation } from "@/types";
+import { Target, Trophy, BookOpen } from "lucide-react";
 
 export default function Home() {
   return (
@@ -46,6 +48,10 @@ export default function Home() {
                   to find
                 </span>
               </div>
+              <div className="flex items-center gap-2 text-sm">
+                <BookOpen className="w-5 h-5 text-blue-500" />
+                <span>{(explanations as Explanation[]).length} Explanations</span>
+              </div>
             </div>
           </div>
         </div>
@@ -60,6 +66,15 @@ export default function Home() {
           </p>
         </div>
         <ChallengeList challenges={challenges as Challenge[]} />
+
+        {/* Explanations */}
+        <div className="mt-16 mb-8">
+          <h3 className="text-2xl font-semibold mb-2">Step-by-Step Explanations</h3>
+          <p className="text-muted-foreground">
+            Walk through code line by line like a debugger to understand how it works
+          </p>
+        </div>
+        <ExplanationList explanations={explanations as Explanation[]} />
       </main>
 
       {/* Footer */}
