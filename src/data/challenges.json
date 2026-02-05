@@ -142,5 +142,457 @@
         "explanation": "No validation of the new password (minimum length, complexity). Add appropriate validation."
       }
     ]
+  },
+  {
+    "id": 7,
+    "title": "Order Model & Controller",
+    "description": "Review this Order model and its controller. Look for mass assignment issues, missing $fillable, and bad practices with the model.",
+    "level": "Medium",
+    "files": [
+      {
+        "name": "Order.php",
+        "code": "<?php\n\nnamespace App\\Models;\n\nuse Illuminate\\Database\\Eloquent\\Model;\n\nclass Order extends Model\n{\n    protected $guarded = [];\n\n    public function user()\n    {\n        return $this->belongsTo(User::class);\n    }\n\n    public function items()\n    {\n        return $this->hasMany(OrderItem::class);\n    }\n\n    public function getTotalAttribute()\n    {\n        return $this->items->sum(function ($item) {\n            return $item->price * $item->quantity;\n        });\n    }\n}"
+      },
+      {
+        "name": "OrderController.php",
+        "code": "<?php\n\nnamespace App\\Http\\Controllers;\n\nuse App\\Models\\Order;\nuse Illuminate\\Http\\Request;\n\nclass OrderController extends Controller\n{\n    public function store(Request $request)\n    {\n        $order = Order::create($request->all());\n\n        foreach ($request->items as $item) {\n            $order->items()->create($item);\n        }\n\n        $order->total_price = $order->total;\n        $order->save();\n\n        return redirect()->route('orders.show', $order);\n    }\n\n    public function updateStatus(Request $request, Order $order)\n    {\n        $order->status = $request->status;\n        $order->save();\n\n        return back();\n    }\n}"
+      }
+    ],
+    "solution": [
+      {
+        "file": "Order.php",
+        "line": 9,
+        "type": "Security",
+        "explanation": "$guarded = [] means ALL fields are mass-assignable. An attacker could set status, user_id, total_price, or any other column. Use $fillable to explicitly whitelist allowed fields."
+      },
+      {
+        "file": "Order.php",
+        "line": 23,
+        "type": "Performance",
+        "explanation": "The accessor loads all items every time $order->total is accessed. If items are not eager loaded, this triggers a query each time. Consider caching or using a database aggregate: $this->items()->sum(DB::raw('price * quantity'))."
+      },
+      {
+        "file": "OrderController.php",
+        "line": 12,
+        "type": "Security",
+        "explanation": "No input validation. The request data should be validated before creating the order. Use $request->validate() or a Form Request."
+      },
+      {
+        "file": "OrderController.php",
+        "line": 14,
+        "type": "Security",
+        "explanation": "$request->items is used directly without validation. Each item's data could contain malicious fields. Validate the items array structure."
+      },
+      {
+        "file": "OrderController.php",
+        "line": 26,
+        "type": "Security",
+        "explanation": "No validation on status value. A user could set any arbitrary status. Validate against allowed values: $request->validate(['status' => 'required|in:pending,processing,shipped,delivered'])."
+      }
+    ]
+  },
+  {
+    "id": 8,
+    "title": "Product Model with Casts & Accessors",
+    "description": "Review this Product model. Watch for incorrect $casts usage, accessor issues, and data integrity problems.",
+    "level": "Medium",
+    "files": [
+      {
+        "name": "Product.php",
+        "code": "<?php\n\nnamespace App\\Models;\n\nuse Illuminate\\Database\\Eloquent\\Model;\n\nclass Product extends Model\n{\n    protected $fillable = [\n        'name', 'description', 'price', 'metadata',\n        'is_active', 'published_at', 'tags'\n    ];\n\n    protected $casts = [\n        'price' => 'float',\n        'metadata' => 'array',\n        'is_active' => 'boolean',\n        'published_at' => 'date',\n        'tags' => 'string',\n    ];\n\n    public function getPriceInDollarsAttribute()\n    {\n        return '$' . $this->price;\n    }\n\n    public function setPriceAttribute($value)\n    {\n        $this->attributes['price'] = $value;\n    }\n\n    public function scopeActive($query)\n    {\n        return $query->where('is_active', true);\n    }\n\n    public function category()\n    {\n        return $this->belongsTo(Category::class);\n    }\n}"
+      },
+      {
+        "name": "ProductController.php",
+        "code": "<?php\n\nnamespace App\\Http\\Controllers;\n\nuse App\\Models\\Product;\nuse Illuminate\\Http\\Request;\n\nclass ProductController extends Controller\n{\n    public function index()\n    {\n        $products = Product::active()\n            ->get();\n\n        foreach ($products as $product) {\n            $product->category_name = $product->category->name;\n        }\n\n        return view('products.index', compact('products'));\n    }\n\n    public function store(Request $request)\n    {\n        $product = Product::create([\n            'name' => $request->name,\n            'price' => $request->price,\n            'metadata' => $request->metadata,\n            'tags' => $request->tags,\n        ]);\n\n        return redirect()->route('products.show', $product);\n    }\n}"
+      }
+    ],
+    "solution": [
+      {
+        "file": "Product.php",
+        "line": 15,
+        "type": "Best Practice",
+        "explanation": "Casting 'price' as 'float' can cause precision issues with monetary values. Use 'decimal:2' cast or store prices as integers (cents) to avoid floating-point arithmetic errors."
+      },
+      {
+        "file": "Product.php",
+        "line": 19,
+        "type": "Logic",
+        "explanation": "'tags' is cast to 'string' but is listed in $fillable as if it holds multiple values. If tags should be an array (e.g., JSON column), cast it to 'array' or 'collection'. If it's a comma-separated string, the cast is redundant."
+      },
+      {
+        "file": "Product.php",
+        "line": 24,
+        "type": "Best Practice",
+        "explanation": "The accessor concatenates '$' directly, making the app USD-only and returning a string. Use number_format() or a money formatting library, and separate formatting from data access."
+      },
+      {
+        "file": "Product.php",
+        "line": 29,
+        "type": "Logic",
+        "explanation": "The price mutator does nothing useful — it just assigns the raw value. If price is stored in cents, it should convert: $this->attributes['price'] = (int) ($value * 100). Otherwise, remove the mutator."
+      },
+      {
+        "file": "ProductController.php",
+        "line": 15,
+        "type": "Performance",
+        "explanation": "N+1 query problem: $product->category is loaded inside a loop. Use eager loading: Product::active()->with('category')->get()."
+      },
+      {
+        "file": "ProductController.php",
+        "line": 16,
+        "type": "Logic",
+        "explanation": "If a product has no category, $product->category->name will throw an error. Use optional(): optional($product->category)->name or null-safe operator $product->category?->name."
+      }
+    ]
+  },
+  {
+    "id": 9,
+    "title": "User Model Scopes & Relationships",
+    "description": "Review these Eloquent scopes and query logic. Find performance issues, logic errors, and bad practices.",
+    "level": "Hard",
+    "files": [
+      {
+        "name": "User.php",
+        "code": "<?php\n\nnamespace App\\Models;\n\nuse Illuminate\\Foundation\\Auth\\User as Authenticatable;\nuse Illuminate\\Database\\Eloquent\\Builder;\n\nclass User extends Authenticatable\n{\n    protected $fillable = [\n        'name', 'email', 'password', 'role', 'is_active'\n    ];\n\n    protected $hidden = ['password'];\n\n    public function scopeActive($query)\n    {\n        return $query->where('is_active', 1);\n    }\n\n    public function scopeAdmins($query)\n    {\n        return $query->where('role', 'admin');\n    }\n\n    public function scopeSearch($query, $term)\n    {\n        return $query->where('name', 'like', '%' . $term . '%')\n            ->where('email', 'like', '%' . $term . '%');\n    }\n\n    public function scopeCreatedBetween($query, $start, $end)\n    {\n        return $query->whereBetween('created_at', [$start, $end]);\n    }\n\n    public function orders()\n    {\n        return $this->hasMany(Order::class);\n    }\n\n    public function getIsAdminAttribute()\n    {\n        return $this->role == 'admin';\n    }\n}"
+      },
+      {
+        "name": "UserController.php",
+        "code": "<?php\n\nnamespace App\\Http\\Controllers;\n\nuse App\\Models\\User;\nuse Illuminate\\Http\\Request;\n\nclass UserController extends Controller\n{\n    public function index(Request $request)\n    {\n        $users = User::active()\n            ->search($request->q)\n            ->get();\n\n        foreach ($users as $user) {\n            $user->order_count = $user->orders->count();\n            $user->total_spent = $user->orders->sum('total_price');\n        }\n\n        return view('users.index', compact('users'));\n    }\n\n    public function exportActive()\n    {\n        $users = User::active()->get();\n\n        return response()->json($users);\n    }\n\n    public function destroy(User $user)\n    {\n        $user->delete();\n\n        return back()->with('success', 'User deleted.');\n    }\n}"
+      }
+    ],
+    "solution": [
+      {
+        "file": "User.php",
+        "line": 11,
+        "type": "Security",
+        "explanation": "'role' should NOT be in $fillable. A user could mass-assign themselves an 'admin' role. Remove 'role' from $fillable and set it explicitly in admin-only controllers."
+      },
+      {
+        "file": "User.php",
+        "line": 18,
+        "type": "Best Practice",
+        "explanation": "Using 1 instead of true for boolean comparison. Use ->where('is_active', true) for clarity, or if the column is cast to boolean in the model, rely on that."
+      },
+      {
+        "file": "User.php",
+        "line": 28,
+        "type": "Logic",
+        "explanation": "The search scope uses AND (->where()->where()) instead of OR. A user named 'John' with email 'john@test.com' won't match 'John' because the email doesn't contain 'John'. Use orWhere or a closure: ->where(fn($q) => $q->where('name', 'like', ...)->orWhere('email', 'like', ...))."
+      },
+      {
+        "file": "User.php",
+        "line": 44,
+        "type": "Best Practice",
+        "explanation": "Use strict comparison === instead of == to avoid type juggling. 'admin' == true evaluates to true in PHP."
+      },
+      {
+        "file": "UserController.php",
+        "line": 16,
+        "type": "Performance",
+        "explanation": "N+1 query: Loading orders in a loop for each user. Use withCount('orders') and withSum('orders', 'total_price') directly in the query instead."
+      },
+      {
+        "file": "UserController.php",
+        "line": 27,
+        "type": "Performance",
+        "explanation": "Exporting all active users with ->get() loads everything into memory. For large datasets, use cursor(), chunk(), or LazyCollection to stream results."
+      },
+      {
+        "file": "UserController.php",
+        "line": 27,
+        "type": "Security",
+        "explanation": "The JSON response will include all model attributes (except $hidden). Sensitive fields like email could be exposed. Use an API Resource or ->only() to control the output."
+      },
+      {
+        "file": "UserController.php",
+        "line": 33,
+        "type": "Best Practice",
+        "explanation": "Hard-deleting a user without handling related data (orders, etc.) can cause foreign key errors or orphaned records. Consider soft deletes or cascading."
+      }
+    ]
+  },
+  {
+    "id": 10,
+    "title": "Invoice Service & Form Request",
+    "description": "Review this service class and its form request validation. Find logic errors, security issues, and architectural problems.",
+    "level": "Hard",
+    "files": [
+      {
+        "name": "StoreInvoiceRequest.php",
+        "code": "<?php\n\nnamespace App\\Http\\Requests;\n\nuse Illuminate\\Foundation\\Http\\FormRequest;\n\nclass StoreInvoiceRequest extends FormRequest\n{\n    public function authorize()\n    {\n        return true;\n    }\n\n    public function rules()\n    {\n        return [\n            'client_id' => 'required',\n            'items' => 'required|array',\n            'items.*.description' => 'required',\n            'items.*.amount' => 'required',\n            'due_date' => 'required',\n            'notes' => 'string',\n        ];\n    }\n}"
+      },
+      {
+        "name": "InvoiceService.php",
+        "code": "<?php\n\nnamespace App\\Services;\n\nuse App\\Models\\Invoice;\nuse App\\Models\\InvoiceItem;\nuse Illuminate\\Support\\Facades\\DB;\n\nclass InvoiceService\n{\n    public function createInvoice(array $data): Invoice\n    {\n        $invoice = Invoice::create([\n            'client_id' => $data['client_id'],\n            'due_date' => $data['due_date'],\n            'notes' => $data['notes'],\n            'status' => 'draft',\n        ]);\n\n        $total = 0;\n        foreach ($data['items'] as $item) {\n            InvoiceItem::create([\n                'invoice_id' => $invoice->id,\n                'description' => $item['description'],\n                'amount' => $item['amount'],\n            ]);\n            $total += $item['amount'];\n        }\n\n        $invoice->total = $total;\n        $invoice->save();\n\n        return $invoice;\n    }\n\n    public function markAsPaid(Invoice $invoice): void\n    {\n        $invoice->status = 'paid';\n        $invoice->paid_at = now();\n        $invoice->save();\n    }\n\n    public function deleteInvoice(Invoice $invoice): void\n    {\n        $invoice->delete();\n    }\n}"
+      },
+      {
+        "name": "InvoiceController.php",
+        "code": "<?php\n\nnamespace App\\Http\\Controllers;\n\nuse App\\Http\\Requests\\StoreInvoiceRequest;\nuse App\\Models\\Invoice;\nuse App\\Services\\InvoiceService;\n\nclass InvoiceController extends Controller\n{\n    public function store(StoreInvoiceRequest $request, InvoiceService $service)\n    {\n        $invoice = $service->createInvoice($request->all());\n\n        return redirect()->route('invoices.show', $invoice);\n    }\n\n    public function pay(Invoice $invoice, InvoiceService $service)\n    {\n        $service->markAsPaid($invoice);\n\n        return back()->with('success', 'Invoice marked as paid.');\n    }\n}"
+      }
+    ],
+    "solution": [
+      {
+        "file": "StoreInvoiceRequest.php",
+        "line": 17,
+        "type": "Security",
+        "explanation": "'client_id' has no 'exists:clients,id' rule. A user could submit a non-existent or unauthorized client_id. Add 'exists:clients,id' and verify the user has access to this client."
+      },
+      {
+        "file": "StoreInvoiceRequest.php",
+        "line": 20,
+        "type": "Security",
+        "explanation": "'items.*.amount' is only 'required' without type validation. Add 'numeric|min:0' to prevent negative amounts or non-numeric values."
+      },
+      {
+        "file": "StoreInvoiceRequest.php",
+        "line": 21,
+        "type": "Logic",
+        "explanation": "'due_date' is only 'required' without date validation. Use 'required|date|after:today' to ensure it's a valid future date."
+      },
+      {
+        "file": "InvoiceService.php",
+        "line": 13,
+        "type": "Best Practice",
+        "explanation": "The create + loop + save pattern is not wrapped in a DB transaction. If an item creation fails, you'll have an invoice with partial items. Use DB::transaction()."
+      },
+      {
+        "file": "InvoiceService.php",
+        "line": 16,
+        "type": "Logic",
+        "explanation": "Accessing $data['notes'] will throw an error if 'notes' is not provided (it's optional in the form request). Use $data['notes'] ?? null."
+      },
+      {
+        "file": "InvoiceService.php",
+        "line": 38,
+        "type": "Logic",
+        "explanation": "No check for current status before marking as paid. An already-paid or cancelled invoice shouldn't be marked as paid again. Check $invoice->status first."
+      },
+      {
+        "file": "InvoiceService.php",
+        "line": 44,
+        "type": "Logic",
+        "explanation": "Deleting an invoice doesn't delete its items (unless cascade is set at DB level). Also, paid invoices should not be deletable. Add status check and handle related items."
+      },
+      {
+        "file": "InvoiceController.php",
+        "line": 13,
+        "type": "Security",
+        "explanation": "$request->all() passes ALL request data including potentially malicious fields. Use $request->validated() to only pass validated fields."
+      }
+    ]
+  },
+  {
+    "id": 11,
+    "title": "Event & Observer Pattern",
+    "description": "Review this Observer and Event/Listener pattern. Find logic errors and architectural problems.",
+    "level": "Hard",
+    "files": [
+      {
+        "name": "UserObserver.php",
+        "code": "<?php\n\nnamespace App\\Observers;\n\nuse App\\Models\\User;\nuse App\\Mail\\WelcomeEmail;\nuse Illuminate\\Support\\Facades\\Mail;\nuse Illuminate\\Support\\Facades\\Cache;\nuse Illuminate\\Support\\Facades\\Log;\n\nclass UserObserver\n{\n    public function created(User $user)\n    {\n        Mail::to($user->email)->send(new WelcomeEmail($user));\n\n        Log::info('New user registered: ' . $user->email);\n\n        Cache::forget('users_count');\n        Cache::forget('active_users');\n    }\n\n    public function updated(User $user)\n    {\n        Cache::flush();\n    }\n\n    public function deleted(User $user)\n    {\n        Cache::flush();\n\n        foreach ($user->orders as $order) {\n            $order->delete();\n        }\n\n        foreach ($user->comments as $comment) {\n            $comment->delete();\n        }\n    }\n}"
+      },
+      {
+        "name": "OrderPlacedListener.php",
+        "code": "<?php\n\nnamespace App\\Listeners;\n\nuse App\\Events\\OrderPlaced;\nuse App\\Mail\\OrderConfirmation;\nuse App\\Services\\InventoryService;\nuse Illuminate\\Support\\Facades\\Mail;\n\nclass OrderPlacedListener\n{\n    public function handle(OrderPlaced $event)\n    {\n        $order = $event->order;\n\n        Mail::to($order->user->email)\n            ->send(new OrderConfirmation($order));\n\n        $inventory = new InventoryService();\n\n        foreach ($order->items as $item) {\n            $inventory->decrementStock(\n                $item->product_id,\n                $item->quantity\n            );\n        }\n    }\n}"
+      }
+    ],
+    "solution": [
+      {
+        "file": "UserObserver.php",
+        "line": 15,
+        "type": "Performance",
+        "explanation": "Sending an email synchronously in an observer blocks the request. Use Mail::to()->queue() or dispatch a queued job to send the email asynchronously."
+      },
+      {
+        "file": "UserObserver.php",
+        "line": 25,
+        "type": "Performance",
+        "explanation": "Cache::flush() clears the ENTIRE cache on every user update. This is destructive — it clears all cached data for the whole application. Only forget specific keys relevant to the user."
+      },
+      {
+        "file": "UserObserver.php",
+        "line": 30,
+        "type": "Performance",
+        "explanation": "Cache::flush() on delete is also too aggressive. Same issue as in the updated() method."
+      },
+      {
+        "file": "UserObserver.php",
+        "line": 32,
+        "type": "Performance",
+        "explanation": "Deleting related records in a loop issues one DELETE query per record. Use $user->orders()->delete() for a single bulk query, or set up cascade deletes at the database level."
+      },
+      {
+        "file": "UserObserver.php",
+        "line": 36,
+        "type": "Performance",
+        "explanation": "Same N+1 deletion issue with comments. Use $user->comments()->delete() instead of looping."
+      },
+      {
+        "file": "OrderPlacedListener.php",
+        "line": 19,
+        "type": "Best Practice",
+        "explanation": "Instantiating InventoryService directly with 'new' instead of using dependency injection. Use constructor injection: public function __construct(private InventoryService $inventory) {}."
+      },
+      {
+        "file": "OrderPlacedListener.php",
+        "line": 21,
+        "type": "Logic",
+        "explanation": "Decrementing stock without checking availability first. If stock is insufficient, this could make stock negative. Check stock and throw an exception or handle gracefully."
+      }
+    ]
+  },
+  {
+    "id": 12,
+    "title": "Blog Post with Soft Deletes & Policy",
+    "description": "Review this Post model, its policy, and controller. Find authorization flaws, logic bugs, and missing best practices.",
+    "level": "Medium",
+    "files": [
+      {
+        "name": "Post.php",
+        "code": "<?php\n\nnamespace App\\Models;\n\nuse Illuminate\\Database\\Eloquent\\Model;\nuse Illuminate\\Database\\Eloquent\\SoftDeletes;\n\nclass Post extends Model\n{\n    use SoftDeletes;\n\n    protected $fillable = [\n        'title', 'body', 'slug', 'user_id',\n        'published_at', 'is_featured'\n    ];\n\n    protected $casts = [\n        'published_at' => 'datetime',\n        'is_featured' => 'boolean',\n    ];\n\n    public function user()\n    {\n        return $this->belongsTo(User::class);\n    }\n\n    public function comments()\n    {\n        return $this->hasMany(Comment::class);\n    }\n\n    public function scopePublished($query)\n    {\n        return $query->whereNotNull('published_at');\n    }\n}"
+      },
+      {
+        "name": "PostPolicy.php",
+        "code": "<?php\n\nnamespace App\\Policies;\n\nuse App\\Models\\Post;\nuse App\\Models\\User;\n\nclass PostPolicy\n{\n    public function update(User $user, Post $post)\n    {\n        return $user->id == $post->user_id;\n    }\n\n    public function delete(User $user, Post $post)\n    {\n        return $user->id == $post->user_id;\n    }\n}"
+      },
+      {
+        "name": "PostController.php",
+        "code": "<?php\n\nnamespace App\\Http\\Controllers;\n\nuse App\\Models\\Post;\nuse Illuminate\\Http\\Request;\nuse Illuminate\\Support\\Str;\n\nclass PostController extends Controller\n{\n    public function index()\n    {\n        $posts = Post::published()\n            ->latest()\n            ->get();\n\n        return view('posts.index', compact('posts'));\n    }\n\n    public function store(Request $request)\n    {\n        $post = Post::create([\n            'title' => $request->title,\n            'body' => $request->body,\n            'slug' => Str::slug($request->title),\n            'user_id' => $request->user_id,\n        ]);\n\n        return redirect()->route('posts.show', $post);\n    }\n\n    public function destroy(Post $post)\n    {\n        $post->delete();\n\n        return back()->with('success', 'Post deleted.');\n    }\n}"
+      }
+    ],
+    "solution": [
+      {
+        "file": "Post.php",
+        "line": 13,
+        "type": "Security",
+        "explanation": "'user_id' should NOT be in $fillable. It allows a user to set any user_id via mass assignment, pretending to be another user. Set it explicitly: $post->user_id = auth()->id()."
+      },
+      {
+        "file": "Post.php",
+        "line": 34,
+        "type": "Logic",
+        "explanation": "The published scope only checks for non-null published_at, but doesn't check if the date is in the past. A post with a future published_at would show as published. Use ->where('published_at', '<=', now())."
+      },
+      {
+        "file": "PostPolicy.php",
+        "line": 12,
+        "type": "Best Practice",
+        "explanation": "Using == instead of === for comparison. Also, admins can't update posts they didn't write. Consider adding: return $user->id === $post->user_id || $user->isAdmin()."
+      },
+      {
+        "file": "PostController.php",
+        "line": 15,
+        "type": "Performance",
+        "explanation": "Using ->get() loads all published posts into memory. For a blog index, use ->paginate() to limit results and enable pagination."
+      },
+      {
+        "file": "PostController.php",
+        "line": 22,
+        "type": "Security",
+        "explanation": "No input validation on the request. Title and body should be validated for required, length, etc. Use a Form Request or $request->validate()."
+      },
+      {
+        "file": "PostController.php",
+        "line": 25,
+        "type": "Security",
+        "explanation": "user_id comes from the request, not from auth. Any user could set someone else's user_id. Use auth()->id() or $request->user()->id instead."
+      },
+      {
+        "file": "PostController.php",
+        "line": 32,
+        "type": "Security",
+        "explanation": "No authorization check before deleting. The PostPolicy exists but is never used. Add $this->authorize('delete', $post) before deleting."
+      }
+    ]
+  },
+  {
+    "id": 13,
+    "title": "Payment Gateway Integration",
+    "description": "Review this payment processing service and controller. Look for security, error handling, and data integrity issues.",
+    "level": "Hard",
+    "files": [
+      {
+        "name": "PaymentService.php",
+        "code": "<?php\n\nnamespace App\\Services;\n\nuse App\\Models\\Payment;\nuse App\\Models\\Order;\nuse Illuminate\\Support\\Facades\\Http;\nuse Illuminate\\Support\\Facades\\Log;\n\nclass PaymentService\n{\n    public function processPayment(Order $order, array $cardData): Payment\n    {\n        $response = Http::post('https://api.payment-provider.com/charge', [\n            'amount' => $order->total,\n            'currency' => 'usd',\n            'card_number' => $cardData['card_number'],\n            'card_exp' => $cardData['expiry'],\n            'card_cvv' => $cardData['cvv'],\n        ]);\n\n        Log::info('Payment processed', [\n            'order_id' => $order->id,\n            'amount' => $order->total,\n            'card' => $cardData['card_number'],\n            'response' => $response->json(),\n        ]);\n\n        $payment = Payment::create([\n            'order_id' => $order->id,\n            'amount' => $order->total,\n            'status' => $response->json('status'),\n            'transaction_id' => $response->json('transaction_id'),\n        ]);\n\n        $order->status = 'paid';\n        $order->save();\n\n        return $payment;\n    }\n}"
+      },
+      {
+        "name": "PaymentController.php",
+        "code": "<?php\n\nnamespace App\\Http\\Controllers;\n\nuse App\\Models\\Order;\nuse App\\Services\\PaymentService;\nuse Illuminate\\Http\\Request;\n\nclass PaymentController extends Controller\n{\n    public function charge(Request $request, PaymentService $paymentService)\n    {\n        $order = Order::find($request->order_id);\n\n        $payment = $paymentService->processPayment($order, [\n            'card_number' => $request->card_number,\n            'expiry' => $request->card_exp,\n            'cvv' => $request->cvv,\n        ]);\n\n        return redirect()->route('orders.show', $order)\n            ->with('success', 'Payment successful!');\n    }\n}"
+      }
+    ],
+    "solution": [
+      {
+        "file": "PaymentService.php",
+        "line": 14,
+        "type": "Security",
+        "explanation": "No error handling on the HTTP call. If the payment provider is down, this will fail silently or throw an unhandled exception. Use try/catch and check $response->successful()."
+      },
+      {
+        "file": "PaymentService.php",
+        "line": 25,
+        "type": "Security",
+        "explanation": "CRITICAL: Logging the full card number in plain text. This violates PCI-DSS. Never log sensitive card data. At most, log the last 4 digits."
+      },
+      {
+        "file": "PaymentService.php",
+        "line": 36,
+        "type": "Logic",
+        "explanation": "The order is marked as 'paid' regardless of the payment response status. Check if $response->json('status') indicates success before updating the order status."
+      },
+      {
+        "file": "PaymentService.php",
+        "line": 29,
+        "type": "Best Practice",
+        "explanation": "The payment creation and order update are not wrapped in a DB transaction. If the order update fails, you'll have a payment record but the order will still show as unpaid."
+      },
+      {
+        "file": "PaymentController.php",
+        "line": 13,
+        "type": "Security",
+        "explanation": "No validation on request inputs. Card number, expiry, CVV, and order_id should all be validated. Also, Order::find() can return null, causing a crash."
+      },
+      {
+        "file": "PaymentController.php",
+        "line": 13,
+        "type": "Security",
+        "explanation": "No authorization check. Any authenticated user can pay for any order by submitting any order_id. Verify the order belongs to the current user."
+      }
+    ]
+  },
+  {
+    "id": 14,
+    "title": "Notification & Mailing System",
+    "description": "Review this notification system with mail and database channels. Find performance and logic issues.",
+    "level": "Easy",
+    "files": [
+      {
+        "name": "SendWeeklyReport.php",
+        "code": "<?php\n\nnamespace App\\Console\\Commands;\n\nuse App\\Models\\User;\nuse App\\Mail\\WeeklyReport;\nuse Illuminate\\Console\\Command;\nuse Illuminate\\Support\\Facades\\Mail;\n\nclass SendWeeklyReport extends Command\n{\n    protected $signature = 'reports:weekly';\n    protected $description = 'Send weekly reports to all users';\n\n    public function handle()\n    {\n        $users = User::all();\n\n        foreach ($users as $user) {\n            Mail::to($user->email)->send(new WeeklyReport($user));\n            $this->info(\"Sent to {$user->email}\");\n        }\n\n        $this->info('All reports sent!');\n    }\n}"
+      },
+      {
+        "name": "WeeklyReport.php",
+        "code": "<?php\n\nnamespace App\\Mail;\n\nuse App\\Models\\User;\nuse Illuminate\\Bus\\Queueable;\nuse Illuminate\\Mail\\Mailable;\n\nclass WeeklyReport extends Mailable\n{\n    use Queueable;\n\n    public $user;\n\n    public function __construct(User $user)\n    {\n        $this->user = $user;\n    }\n\n    public function build()\n    {\n        return $this->subject('Your Weekly Report')\n            ->view('emails.weekly-report')\n            ->with([\n                'orders' => $this->user->orders()->get(),\n                'totalSpent' => $this->user->orders()->sum('total'),\n            ]);\n    }\n}"
+      }
+    ],
+    "solution": [
+      {
+        "file": "SendWeeklyReport.php",
+        "line": 17,
+        "type": "Performance",
+        "explanation": "User::all() loads all users into memory at once. For large databases, this will exhaust memory. Use User::chunk(100, function($users) { ... }) or cursor()."
+      },
+      {
+        "file": "SendWeeklyReport.php",
+        "line": 20,
+        "type": "Performance",
+        "explanation": "Emails are sent synchronously in a loop, blocking the command until all are sent. Use Mail::to()->queue() to dispatch emails to a queue for async sending."
+      },
+      {
+        "file": "WeeklyReport.php",
+        "line": 25,
+        "type": "Performance",
+        "explanation": "Two separate queries for orders and totalSpent when one would suffice. The orders are already being fetched; compute the total from the collection: $orders->sum('total')."
+      }
+    ]
   }
 ]
