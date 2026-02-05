@@ -181,13 +181,22 @@ export default function ChallengePage({
               </div>
             </div>
 
+            {/* Center - Stats */}
+            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+              <span>
+                {challenge.solution.length} error
+                {challenge.solution.length > 1 ? "s" : ""} to find
+                {isMultiFile ? ` across ${files.length} files` : ""}
+              </span>
+              <div className="h-4 w-px bg-border" />
+              <span>
+                {selectedLines.size} line
+                {selectedLines.size !== 1 ? "s" : ""} selected
+              </span>
+            </div>
+
             {/* Right side - Actions */}
             <div className="flex items-center gap-3">
-              <span className="text-sm text-muted-foreground">
-                {selectedLines.size} line{selectedLines.size !== 1 ? "s" : ""}{" "}
-                selected
-              </span>
-              <div className="h-6 w-px bg-border" />
               {result ? (
                 <>
                   <Button variant="outline" size="sm" onClick={handleRetry}>
@@ -314,16 +323,6 @@ export default function ChallengePage({
             disabled={!!result}
           />
 
-          {/* Stats */}
-          {!result && (
-            <div className="text-sm text-muted-foreground text-center mt-4">
-              {challenge.solution.length} error
-              {challenge.solution.length > 1 ? "s" : ""} to find
-              {isMultiFile
-                ? ` across ${files.length} files`
-                : " in this code"}
-            </div>
-          )}
         </div>
       </div>
     </div>
